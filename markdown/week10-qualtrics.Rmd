@@ -1,0 +1,46 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# R Studio API Code
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+# library(rstudioapi)
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+```
+
+# Libraries & Authentication
+```{r}
+library(tidyverse)
+library(qualtRics)
+library(lubridate)
+api <- "apikeygoeshere"
+baseURL <- "umn.ca1.qualtrics.com"
+qualtrics_api_credentials(api,baseURL,install=T,overwrite=T)
+```
+
+# Data Import and Cleaning
+```{r}
+surveys <- all_surveys()
+surveys_tbl <- as_tibble(surveys) %>%
+  select(name,creationDate) %>%
+  mutate(creationDate=ymd_hms(creationDate),
+         DateOnly=date(creationDate)) %>%
+  group_by(DateOnly) %>%
+  summarise(Count=n())
+surveys_tbl
+```
+
+# Analysis
+
+# Visualization
+```{r,echo=FALSE}
+ggplot(surveys_tbl,aes(DateOnly,Count))+
+  geom_bar(stat="identity")+
+  labs(title="Number of Surveys Created Over time",
+       xlab="Year",
+       ylab="Number of surveys created")
+```

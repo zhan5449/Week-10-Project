@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_notebook: default
+---
+
+# R Studio API Code
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+# library(rstudioapi)
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+```
+
+# Libraries & Authentication
+```{r}
+library(tidyverse)
+library(twitteR)
+library("openssl")
+library("httpuv")
+library(knitr)
+api <- "qAOmw6P4undTicecLFQhBU34S"
+secret <- "kgNXsg1I1kc7JQRullZyJk8u7Pckga9ameexf6Zh6zttMYIvrX"
+token <- "1243243520560902146-1pyDXAsd5NGh36rejnXyjiAvmXuEoT"
+sectoken <- "MA9HTBWgyl1vrqQ6ii4hlyKKMehrYA2Jz0fZuk3tTAbTa"
+setup_twitter_oauth(api,secret,token,sectoken)
+```
+
+# Data Import and Cleaning
+```{r}
+tweets <- searchTwitter("#rstats",1000)
+tweets <- strip_retweets(tweets) # remove retweets
+tweets_tbl <- twListToDF(tweets) %>%
+  select(text,screenName,favoriteCount,retweetCount) 
+pander::pander(tweets_tbl)
+```
+I downloaded per-post data for the most recent 1000 posts from #rstats, excluded any retweets, and retained data on screen name of the person tweeting, content of their tweet, the number of times the tweets have been favorited and the number of times they have been retweeted.
+
+# Analysis
+The correlation between the length of tweet and retweet popularity is `r cor.test(nchar(tweets_tbl$text),tweets_tbl$retweetCount)$estimate`, with a p-value of `r cor.test(nchar(tweets_tbl$text),tweets_tbl$retweetCount)$"p.value"`.
+The correlation between the length of tweet and likes/favorites is `r cor.test(nchar(tweets_tbl$text),tweets_tbl$favoriteCount)$estimate`, with a p-value of `r cor.test(nchar(tweets_tbl$text),tweets_tbl$favoriteCount)$"p.value"`.
+
+# Visualization
+```{r,echo=F}
+ggplot(tweets_tbl,aes(nchar(tweets_tbl$text),retweetCount))+
+  geom_point()+
+  geom_smooth(method="lm",se=F)+
+  labs(title="The Relationship between the Length of Tweet and Retweet Popularity",
+       x="The length of tweet (in number of characters)",
+       y="Number of retweets")
+ggplot(tweets_tbl,aes(nchar(tweets_tbl$text),favoriteCount))+
+  geom_point()+
+  geom_smooth(method="lm",se=F)+
+  labs(title="The Relationship between the Length of Tweet and Like/Favorite Popularity",
+       x="The length of tweet (in number of characters)",
+       y="Number of favorites")
+```

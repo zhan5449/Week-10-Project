@@ -1,0 +1,46 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# R Studio API Code
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+# library(rstudioapi)
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+```
+
+# Libraries
+```{r}
+library(tidyverse)
+library(httr)
+library(rvest)
+```
+
+# Data Import and Cleaning
+```{r}
+profile <- read_html("https://scholar.google.com/citations?user=nx_vfuYAAAAJ&hl=en&oi=ao")
+profile_nodes <- html_nodes(profile,"#gsc_a_b .gs_ibl , .gsc_a_at+ .gs_gray , .gsc_a_at")
+profile_text <- html_text(profile_nodes)
+profile_tbl <- as_tibble(matrix(profile_text,nrow=20,ncol=4,byrow=TRUE,
+                                dimnames=list(c(),
+                                              c("article","authors","citationCount","year")))) %>%
+  mutate(year=as.numeric(year),
+         citationCount=as.numeric(citationCount))
+profile_tbl
+```
+
+# Analysis
+The correlation beween year and citation count is `r cor.test(profile_tbl$year,profile_tbl$citationCount)$estimate`, with a p-value of `r cor.test(profile_tbl$year,profile_tbl$citationCount)$"p.value"`. 
+
+# Visualization
+```{r,echo=FALSE}
+ggplot(profile_tbl,aes(year,citationCount))+
+  geom_point()+
+  geom_smooth(method="lm",se=F)+
+  labs(title="The Relationship between Year and Citation Count of Paul Sackett's Publications",
+       x="Year published",
+       y="Citation count")
+```
